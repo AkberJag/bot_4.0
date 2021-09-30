@@ -118,5 +118,3 @@ other_files/
 test*
 /bot_modules/config*
 config.py
-sms/
-sms/send_sms.py
