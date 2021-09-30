@@ -50,8 +50,6 @@ def get_txt_file_data(textfile_name):
                     if len(line) > 6:
                         datas.append(line)
     if date != "" and time != "":
-        print(f"date {date} time {time}")
         return {"datas": datas, "date": date, "time": time}
     else:
-        print(f"date {date} time {time}")
         return 0

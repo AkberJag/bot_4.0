@@ -404,11 +404,23 @@ def stop_bot(message):
             pass
 
 
+# send file id, if someone sends a photo
 @bot.message_handler(content_types=["photo"])
 def identify_documents_and_act(message):
     if message.chat.id in ADMINS:
         bot.delete_message(message.chat.id, message.message_id)
         bot.send_message(message.chat.id, message.photo[0].file_id)
+
+
+@bot.message_handler(commands=["me"])
+def send_senders_details(message):
+    if message.chat.id in ADMINS:
+        import pprint
+
+        bot.send_message(
+            message.chat.id,
+            f"{message.from_user.first_name}\n{message.chat.id}",
+        )
 
 
 # main function

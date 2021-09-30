@@ -3,9 +3,11 @@ import openpyxl
 
 from time import sleep
 from django.db.models import Q
+from sms.send_sms import daily_sms
 from datetime import datetime, timedelta
-from bot_modules.config import ADMIN, MILMA_NAME
+from bot_modules.config import msg_auth_key
 from admin_modules import process_bill_text
+from bot_modules.config import ADMIN, MILMA_NAME
 from bot_modules.jason_handler import add_to_json
 from admin_modules.weekly_mky import process_weeklyXL_mky, send_mky_weekly
 from bot_modules.send_msg import send_warnings_to_admin, send_messages
@@ -206,9 +208,17 @@ def document_from_telegram(message, bot):
                         print(
                             f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
                         )
+
+                # send SMS is the msg failed in telegram
                 else:
-                    # send SMS if padamukhm
-                    pass
+                    user = User.objects.filter(milma_id=int(data[0]))
+                    if msg_auth_key and user:
+                        daily_sms(
+                            data,
+                            name=f"{user.values()[0]['name'][:15].title()} ({user.values()[0]['milma_id']})",
+                            phone=user.values()[0]["phone"],
+                            date=f"{text_file_data['date']} {text_file_data['time']}",
+                        )
 
             # add the message and all recived users msg id and chat id
             # to delete a messsage in future.
