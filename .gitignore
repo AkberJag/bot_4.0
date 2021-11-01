@@ -118,3 +118,4 @@ other_files/
 test*
 /bot_modules/config*
 config.py
+*.pem
