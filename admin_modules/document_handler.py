@@ -16,6 +16,7 @@ from bot_modules.warning_msgs import (
     daily_bill,
     daily_bill_success,
     weekly_pad_upload,
+    daily_sms_success
 )
 
 
@@ -145,8 +146,14 @@ def document_from_telegram(message, bot):
 
             # get each users data then save to db and send via tg
             delivery_success = 0
+            sms_delivery_success = 0
+            
             daily_msg_details = []
+            
             failed_users = ""
+            sms_failed_users = ""
+
+            
             daily_bill_pk = 0
             for data in text_file_data["datas"]:
                 try:
@@ -212,13 +219,24 @@ def document_from_telegram(message, bot):
                 # send SMS is the msg failed in telegram
                 else:
                     user = User.objects.filter(milma_id=int(data[0]))
+                    
+                    # send the sms only if there is a AUTH_KEY and the user exist on the db
                     if msg_auth_key and user:
-                        daily_sms(
+                        sms_delivery_details = daily_sms(
                             data,
                             name=f"{user.values()[0]['name'][:15].title()} ({user.values()[0]['milma_id']})",
                             phone=user.values()[0]["phone"],
                             date=f"{text_file_data['date']} {text_file_data['time']}",
                         )
+
+                        if sms_delivery_details["reply"] is not None:
+                            sms_delivery_success += 1
+                        else:
+                            sms_failed_users += f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']})\n"
+                            print(
+                            f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
+                        )
+
 
             # add the message and all recived users msg id and chat id
             # to delete a messsage in future.
@@ -231,13 +249,14 @@ def document_from_telegram(message, bot):
             )
 
             # send success message to admin
-            send_warnings_to_admin(bot, daily_bill_success.format(delivery_success))
+            send_warnings_to_admin(bot, daily_bill_success.format(delivery_success) + f'\n\n{daily_sms_success.format(sms_delivery_success) if sms_delivery_success > 0 else ""}')
 
             # check if any message is failed, then send their details
             if failed_users != "":
+                nl ="\n\n"
                 send_warnings_to_admin(
                     bot,
-                    f"<b>Telegram message failed for these users:</b>\n\n{failed_users[:3900]}",
+                    f'{"<b>Telegram message failed for these users:</b>{}{}".format(nl,failed_users[:3900]) if failed_users != "" else "" }' + f'\n\n{"Sending SMS failed for these users:{}".format(sms_failed_users) if sms_failed_users == "" else ""}',
                 )
 
     # if the file is a contacts.xlsx file

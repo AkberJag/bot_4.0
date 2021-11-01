@@ -29,6 +29,7 @@ from bot_modules.forward_handler import forward_message
 from bot_modules.custom_msg_handler import custom_message
 from admin_modules.user_operations_handler import user_operations
 from bot_modules.bot_keyboards import add_contect_reqst_keyboard, add_help_keyboard
+from sms.sms_balance import get_sms_balance
 
 from bot_modules.config import (
     ADMINS,
@@ -38,10 +39,14 @@ from bot_modules.config import (
     MILMA_NAME,
     MILMA_SEC,
     bot_version,
+    msg_auth_key
 )
 
 # start bot instance
 bot = telebot.TeleBot(TOKEN)
+
+# delete any active webhook
+bot.delete_webhook()
 
 # if the app is under testing, use polling else use webhook
 if config.bot_name != "DEBUG_polling":
@@ -49,21 +54,21 @@ if config.bot_name != "DEBUG_polling":
 
 # flask stuff
 # Empty webserver index, return nothing, just http 200
-@app.route('/', methods=['GET', 'HEAD'])
-def index():
-    return ''
+    @app.route('/', methods=['GET', 'HEAD'])
+    def index():
+        return 'nothing here, come back tomorrow'
 
 
-# Process webhook calls
-@app.route(config.WEBHOOK_URL_PATH, methods=['POST'])
-def webhook():
-    if flask.request.headers.get('content-type') == 'application/json':
-        json_string = flask.request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return ''
-    else:
-        flask.abort(403)
+    # Process webhook calls
+    @app.route(config.WEBHOOK_URL_PATH, methods=['POST'])
+    def webhook():
+        if flask.request.headers.get('content-type') == 'application/json':
+            json_string = flask.request.get_data().decode('utf-8')
+            update = telebot.types.Update.de_json(json_string)
+            bot.process_new_updates([update])
+            return ''
+        else:
+            flask.abort(403)
 
 
 
@@ -389,9 +394,10 @@ def status_message(message):
         )
 
     elif message.from_user.id == ADMIN:
+        sms_balance =  get_sms_balance()
         bot.send_message(
             message.chat.id,
-            f"{pprint.pformat(current_users)}\n\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}\n\nv {bot_version} - {MILMA_NAME}",
+            f"{pprint.pformat(current_users) if current_users else ''}\n\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}\n\n{'SMS balance: {}'.format(sms_balance) if sms_balance and msg_auth_key else ''}v {bot_version} - {MILMA_NAME}",
         )
 
 
@@ -488,7 +494,7 @@ if __name__ == "__main__":
         except requests.exceptions.ConnectionError:
             sleep(600)
 
-        except:
+        except Exception as e:
             exception = str(traceback.format_exc())
             for i in range(0, len(exception), 3999):
                 bot.send_message(ADMIN, f"{exception[i : i + 3999]}")
@@ -498,5 +504,8 @@ if __name__ == "__main__":
                 "⚠ Bot stopped because of some error ⚠\nUse /status to get bot status\n\nBot will try to restart soon.",
             )
             print(traceback.format_exc())
+            if e.__class__.__name__ == "FileNotFoundError":
+                break
+
         current_users = dict()
         sleep(6)
