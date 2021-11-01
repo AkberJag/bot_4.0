@@ -1,7 +1,7 @@
 ##########################
 # Django specific settings
 ##########################
-import os
+import os, flask
 from user_modules.old_bills_handler import get_old_bills
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
@@ -24,7 +24,7 @@ from django.db.models import Q
 from admin_modules import document_handler
 from telebot.types import ReplyKeyboardRemove
 from bot_modules.warning_msgs import bot_start
-from bot_modules import warning_msgs, send_msg
+from bot_modules import warning_msgs, send_msg, config
 from bot_modules.forward_handler import forward_message
 from bot_modules.custom_msg_handler import custom_message
 from admin_modules.user_operations_handler import user_operations
@@ -42,6 +42,13 @@ from bot_modules.config import (
 
 # start bot instance
 bot = telebot.TeleBot(TOKEN)
+
+# if the app is under testing, use polling else use webhook
+if config.bot_name != "DEBUG":
+    app = flask.Flask(__name__)
+
+# delete the webhook if it is already there
+bot.delete_webhook()
 
 # to keep track of the current users using the bot.
 current_users = dict()
@@ -381,7 +388,7 @@ class Error(Exception):
 
 
 class ManualBotStopError(Error):
-    """Raised when the input value is too small"""
+    """Raised when mannualy the bot is stopped"""
 
     pass
 
@@ -425,11 +432,26 @@ def send_senders_details(message):
 
 # main function
 def main():
-
     # send bot start warning to admin
     bot.send_message(ADMIN, bot_start, reply_markup=ReplyKeyboardRemove())
+    
+    if config.bot_name == "DEBUG":
+        bot.polling(none_stop=True)
+    
+    else:
+        bot.remove_webhook()
+        sleep(0.5)
 
-    bot.polling(none_stop=True)
+        # Set webhook
+        bot.set_webhook(url=config.WEBHOOK_URL_BASE + config.WEBHOOK_URL_PATH,
+                certificate=open(config.WEBHOOK_SSL_CERT, 'r'))
+        
+        # Start flask server
+        app.run(host=config.WEBHOOK_LISTEN,
+        port=config.WEBHOOK_PORT,
+        ssl_context=(config.WEBHOOK_SSL_CERT, config.WEBHOOK_SSL_PRIV),
+        debug=True)
+
 
 
 if __name__ == "__main__":
