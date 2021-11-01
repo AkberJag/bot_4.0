@@ -44,11 +44,28 @@ from bot_modules.config import (
 bot = telebot.TeleBot(TOKEN)
 
 # if the app is under testing, use polling else use webhook
-if config.bot_name != "DEBUG":
+if config.bot_name != "DEBUG_polling":
     app = flask.Flask(__name__)
 
-# delete the webhook if it is already there
-bot.delete_webhook()
+# flask stuff
+# Empty webserver index, return nothing, just http 200
+@app.route('/', methods=['GET', 'HEAD'])
+def index():
+    return ''
+
+
+# Process webhook calls
+@app.route(config.WEBHOOK_URL_PATH, methods=['POST'])
+def webhook():
+    if flask.request.headers.get('content-type') == 'application/json':
+        json_string = flask.request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        flask.abort(403)
+
+
 
 # to keep track of the current users using the bot.
 current_users = dict()
@@ -435,7 +452,7 @@ def main():
     # send bot start warning to admin
     bot.send_message(ADMIN, bot_start, reply_markup=ReplyKeyboardRemove())
     
-    if config.bot_name == "DEBUG":
+    if config.bot_name == "DEBUG_polling":
         bot.polling(none_stop=True)
     
     else:
