@@ -4,7 +4,7 @@ from bot_modules.config import msg_auth_key
 def get_sms_balance():
     conn = http.client.HTTPSConnection("api.msg91.com")
 
-    conn.request("GET", f"/api/balance.php?authkey=&type=4")
+    conn.request("GET", f"/api/balance.php?authkey={msg_auth_key}&type=4")
 
     res = conn.getresponse()
     data = res.read()

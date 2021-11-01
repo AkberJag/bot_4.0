@@ -22,7 +22,7 @@ def get_old_bills(message, bot):
 
         old_bill_msg = "<b>Date, Qty, Rate, Amount</b>\n\n"
         # get one week dates and match it with the bills_formatted dict
-        for i in range(7):
+        for i in range(14):
             day = datetime.now().date() - timedelta(days=i)
 
             # get the AM bill
