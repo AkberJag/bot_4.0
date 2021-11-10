@@ -1,8 +1,10 @@
 import os
+import random
 import openpyxl
 
 from time import sleep
 from django.db.models import Q
+from admin_modules.weekly_pad import process_weeklyXL_pad, send_pad_weekly
 from sms.send_sms import daily_sms
 from datetime import datetime, timedelta
 from bot_modules.config import msg_auth_key
@@ -16,7 +18,7 @@ from bot_modules.warning_msgs import (
     daily_bill,
     daily_bill_success,
     weekly_pad_upload,
-    daily_sms_success
+    daily_sms_success,
 )
 
 
@@ -38,6 +40,7 @@ def make_XL_from_db():
     workbook.save("contacts.xlsx")
 
 
+# remove unwanted rows and cloums from the contact xl
 def sanitize_XL(workbook, file_path):
     contacts_excel_row_length = 5
     wb_sheet = workbook.worksheets[0]
@@ -54,8 +57,10 @@ def sanitize_XL(workbook, file_path):
             row_items = list(x.value for x in row)
             # check password cell
             if row_items[3] == None:
-                wb_sheet[i + 1][3].value = "1221"
-                row_items[3] = "1234"
+                wb_sheet[i + 1][3].value = str(
+                    random.randint(1000, 9999)
+                )  # actual value get save in DB
+                row_items[3] = "1234"  # dummy value
 
             # check telegram id cell
             if row_items[4] == None:
@@ -147,13 +152,12 @@ def document_from_telegram(message, bot):
             # get each users data then save to db and send via tg
             delivery_success = 0
             sms_delivery_success = 0
-            
+
             daily_msg_details = []
-            
+
             failed_users = ""
             sms_failed_users = ""
 
-            
             daily_bill_pk = 0
             for data in text_file_data["datas"]:
                 try:
@@ -216,10 +220,10 @@ def document_from_telegram(message, bot):
                             f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
                         )
 
-                # send SMS is the msg failed in telegram
+                # send SMS if the msg failed in telegram
                 else:
                     user = User.objects.filter(milma_id=int(data[0]))
-                    
+
                     # send the sms only if there is a AUTH_KEY and the user exist on the db
                     if msg_auth_key and user:
                         sms_delivery_details = daily_sms(
@@ -234,9 +238,8 @@ def document_from_telegram(message, bot):
                         else:
                             sms_failed_users += f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']})\n"
                             print(
-                            f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
-                        )
-
+                                f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
+                            )
 
             # add the message and all recived users msg id and chat id
             # to delete a messsage in future.
@@ -249,14 +252,19 @@ def document_from_telegram(message, bot):
             )
 
             # send success message to admin
-            send_warnings_to_admin(bot, daily_bill_success.format(delivery_success) + f'\n\n{daily_sms_success.format(sms_delivery_success) if sms_delivery_success > 0 else ""}')
+            send_warnings_to_admin(
+                bot,
+                daily_bill_success.format(delivery_success)
+                + f'\n\n{daily_sms_success.format(sms_delivery_success) if sms_delivery_success > 0 else ""}',
+            )
 
             # check if any message is failed, then send their details
             if failed_users != "":
-                nl ="\n\n"
+                nl = "\n\n"
                 send_warnings_to_admin(
                     bot,
-                    f'{"<b>Telegram message failed for these users:</b>{}{}".format(nl,failed_users[:3900]) if failed_users != "" else "" }' + f'\n\n{"Sending SMS failed for these users:{}".format(sms_failed_users) if sms_failed_users == "" else ""}',
+                    f'{"<b>Telegram message failed for these users:</b>{}{}".format(nl,failed_users[:3900]) if failed_users != "" else "" }'
+                    + f'\n\n{"Sending SMS failed for these users:{}".format(sms_failed_users) if sms_failed_users == "" else ""}',
                 )
 
     # if the file is a contacts.xlsx file
@@ -283,13 +291,17 @@ def document_from_telegram(message, bot):
         wb_sheet = workbook.worksheets[0]
         for row in wb_sheet.iter_rows():
             try:
-                User.objects.update_or_create(
-                    milma_id=row[0].value,
-                    name=str(row[1].value).capitalize(),
-                    phone=row[2].value,
-                    pword=1234 if row[3].value is None else row[3].value,
-                    telegram_id=0 if row[4].value is None else row[4].value,
-                )
+                # check if the user is already in the DB
+                if not User.objects.filter(
+                    Q(milma_id=row[0].value) | Q(phone=row[2].value)
+                ):
+                    User.objects.update_or_create(
+                        milma_id=row[0].value,
+                        name=str(row[1].value).capitalize(),
+                        phone=row[2].value,
+                        pword=1234 if row[3].value is None else row[3].value,
+                        telegram_id=0 if row[4].value is None else row[4].value,
+                    )
             except:
                 pass
 
@@ -332,6 +344,50 @@ def document_from_telegram(message, bot):
             # if result is succeful send SMS to users
             if weekly_data["result"] == "Success":
                 send_mky_weekly(bot, weekly_data)
+
+            # if failed, warn admin
+            else:
+                # forward this file to me
+                if message.chat.id != ADMIN:
+                    bot.forward_message(ADMIN, message.chat.id, file_message_id)
+
+                send_warnings_to_admin(
+                    bot,
+                    "<b>എന്തോ കുഴപ്പം ഉണ്ട്..</b>\n\nഎക്സൽ ഫയലിലെ വിവരങ്ങൾ പ്രോസസ്സ് ചെയ്യാൻ പറ്റിയില്ല!😢😢",
+                )
+                import pprint
+
+                bot.send_message(ADMIN, pprint.pformat(weekly_data)[:4000])
+
+        elif MILMA_NAME == "APCOS പടമുഖം":
+            print(f"{MILMA_NAME} another xl")
+            # save contacts.xlsx
+            # file to temp location
+            # fmt: off
+            # get "telegram file name" not the exact file name
+            file_path = str(bot.get_file(message.document.file_id).file_path).replace("documents/", "")
+            print(file_path)
+            # fmt: on
+            # this is to forward the file to admin is something goes wrong
+            file_message_id = message.message_id
+
+            # save the XL file to disk
+            save_file_from_tg(message, bot, file_path)
+
+            weekly_data = process_weeklyXL_pad(file_path)
+
+            # send bill details sending msg to admins
+            send_warnings_to_admin(
+                bot,
+                weekly_pad_upload.format(weekly_data["date"], len(weekly_data["data"])),
+            )
+
+            # move unused file to a directory
+            move_old_files(file_path, "old_weekly_pad_XL")
+
+            # if result is succeful send message to users
+            if weekly_data["result"] == "Success":
+                send_pad_weekly(bot, weekly_data)
 
             # if failed, warn admin
             else:

@@ -22,13 +22,14 @@ def process_weeklyXL_mky(file_path):
             if "header" and "name" in [str(cell.value).lower() for cell in row]:
                 # heading
                 mky_weekly_heading_start = i
+                break
 
         if mky_weekly_heading_start > 5:
             return {
                 "result": None,
                 "data": "0",
                 "date": "Error",
-                "error": f"Greater than 5 {mky_weekly_heading_start}\n{traceback.format_exc()[:3997]}",
+                "error": f"Greater than 5 - {mky_weekly_heading_start}\n{traceback.format_exc()[:3997]}",
             }
 
         elif mky_weekly_heading_start == -1:
@@ -36,9 +37,8 @@ def process_weeklyXL_mky(file_path):
                 "result": None,
                 "data": "0",
                 "date": "Error",
-                "error": f"No heading find error weekly {mky_weekly_heading_start}\n{traceback.format_exc()[:3997]}",
+                "error": f"No heading find error weekly - {mky_weekly_heading_start}\n{traceback.format_exc()[:3997]}",
             }
-        week_range = "തിയതി നൽകിയിട്ടില്ല"
         try:
             if "20" in str(
                 [

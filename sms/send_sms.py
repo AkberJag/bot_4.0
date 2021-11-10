@@ -31,10 +31,14 @@ def daily_sms(data, name, phone, date):
         res = conn.getresponse()
         data = res.read().decode("utf-8")
 
-        return {"reply": json.loads(data).get('type'),"error": None}
-    
+        return {"reply": json.loads(data).get("type"), "error": None}
+
     except Exception as e:
         return {"reply": None, "error": e}
+
+
+def weekly_sms():
+    pass
 
 
 # todo here.

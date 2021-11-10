@@ -38,4 +38,4 @@ def send_to_usrs_img(bot, message, user_id):
             parse_mode="HTML",
         )
     except Exception as e:
-        print(f"{user_id}: {e}")
+        print(f"Exception {user_id}: {e}")
