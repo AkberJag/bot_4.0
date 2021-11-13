@@ -4,11 +4,17 @@ import traceback
 from time import sleep
 from bot_modules.config import msg_auth_key
 from bot_modules.jason_handler import add_to_json
-from bot_modules.warning_msgs import weekly_pad_success, weekly_msg_pad
+from bot_modules.warning_msgs import (
+    weekly_pad_success,
+    weekly_msg_pad,
+    daily_sms_success,
+)
 from bot_modules.send_msg import send_warnings_to_admin, send_to_usrs_img
 
 
 import openpyxl, traceback
+
+from sms.send_sms import weekly_sms
 
 
 def process_weeklyXL_pad(file_path):
@@ -94,6 +100,10 @@ def send_pad_weekly(bot, weekly_data):
     delivery_success = 0
     weekly_msg_details = []
 
+    sms_delivery_success = 0
+
+    sms_failed_users = ""
+
     for data in weekly_data.get("data"):
         weekly_msg = ""
 
@@ -115,7 +125,10 @@ def send_pad_weekly(bot, weekly_data):
                     f"<b>{user[0]['name']} {data[0]}</b>\n\n"  # Name and milma no
                 )
                 for i, heading in enumerate(weekly_data.get("heading")[2:], start=2):
-                    weekly_msg += f"{heading.capitalize()}: {round(data[i], 2) if type(data[i]) == float else data[i]}\n"
+                    weekly_msg += f"{heading.capitalize()}: "
+                    weekly_msg += (
+                        f"{data[i]:.2f}\n" if type(data[i]) == float else f"{data[i]}\n"
+                    )
 
                 delivery_details = send_to_usrs_img(
                     bot,
@@ -136,23 +149,24 @@ def send_pad_weekly(bot, weekly_data):
             user = User.objects.filter(milma_id=int(data[0]))
             # send the sms only if there is a AUTH_KEY and the user exist on the db
             if msg_auth_key and user:
-                sms_delivery_details = weekly_msg(
+                sms_delivery_details = weekly_sms(
                     data,
-                    name=f"{user.values()[0]['name'][:15].title()} ({user.values()[0]['milma_id']})",
-                    phone=user.values()[0]["phone"],
-                    date=f"{text_file_data['date']} {text_file_data['time']}",
+                    user.values(),
+                    weekly_data.get("heading"),
+                    weekly_data.get("date"),
                 )
 
-                if sms_delivery_details["reply"] is not None:
+                if sms_delivery_details["reply"] != "success":
                     sms_delivery_success += 1
                 else:
                     sms_failed_users += f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']})\n"
-                    print(
-                        f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
-                    )
 
     # send success message to admin
-    send_warnings_to_admin(bot, weekly_pad_success.format(delivery_success))
+    send_warnings_to_admin(
+        bot,
+        weekly_pad_success.format(delivery_success)
+        + f'\n\n{daily_sms_success.format(sms_delivery_success) if sms_delivery_success > 0 else ""}',
+    )
     delivery_success = 0
 
     # add the message and all recived users msg id and chat id

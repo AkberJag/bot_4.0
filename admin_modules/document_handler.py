@@ -264,7 +264,7 @@ def document_from_telegram(message, bot):
                 send_warnings_to_admin(
                     bot,
                     f'{"<b>Telegram message failed for these users:</b>{}{}".format(nl,failed_users[:3900]) if failed_users != "" else "" }'
-                    + f'\n\n{"Sending SMS failed for these users:{}".format(sms_failed_users) if sms_failed_users == "" else ""}',
+                    + f'\n\n{"Sending SMS failed for these users:{}".format(sms_failed_users) if sms_failed_users != "" else ""}',
                 )
 
     # if the file is a contacts.xlsx file
