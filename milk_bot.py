@@ -385,18 +385,12 @@ def member_operation_functions(message):
 @bot.message_handler(commands=["status", "Status"])
 def status_message(message):
     global current_users
-    if message.from_user.id == MILMA_SEC:
-        bot.send_message(
-            message.chat.id,
-            f"🤖 <b>BOT IS ALIVE!</b> 🤖\n\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}\n\n Bot last updated on {update_date}",
-            parse_mode="HTML",
-        )
-
-    elif message.from_user.id == ADMIN:
+    if message.from_user.id in ADMINS:
         sms_balance = get_sms_balance()
         bot.send_message(
             message.chat.id,
-            f"{pprint.pformat(current_users) if current_users else ''}\n\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}\n\n{'SMS balance: {}'.format(sms_balance) if sms_balance and msg_auth_key else ''}v {bot_version} - {MILMA_NAME}",
+            f"🤖 <b>BOT IS ALIVE!</b> 🤖\n{pprint.pformat(current_users) if current_users and message.from_user.id == ADMIN else ''}\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}\n\n{'SMS balance: {}'.format(sms_balance) if sms_balance and msg_auth_key else ''}v {bot_version} - {MILMA_NAME}",
+            parse_mode="HTML",
         )
 
 
