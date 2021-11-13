@@ -156,7 +156,7 @@ def send_pad_weekly(bot, weekly_data):
                     weekly_data.get("date"),
                 )
 
-                if sms_delivery_details["reply"] != "success":
+                if sms_delivery_details["reply"] == "success":
                     sms_delivery_success += 1
                 else:
                     sms_failed_users += f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']})\n"
