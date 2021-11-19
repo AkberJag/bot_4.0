@@ -67,7 +67,7 @@ def process_weeklyXL_pad(file_path):
         XL_HEADING = [
             str(cell.value).lower()
             for cell in wb_sheet[pad_weekly_heading_start]
-            if str(cell.value).replace(".", "").isalnum() and cell.value
+            if str(cell.value).replace(".", "") and cell.value
         ]
 
         # get data of each user from the excel file
