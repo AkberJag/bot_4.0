@@ -159,6 +159,7 @@ def document_from_telegram(message, bot):
             sms_failed_users = ""
 
             daily_bill_pk = 0
+            delivery_details = ""
             for data in text_file_data["datas"]:
                 try:
                     # save daily bill details to db
@@ -217,7 +218,7 @@ def document_from_telegram(message, bot):
                     else:
                         failed_users += f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']})\n"
                         print(
-                            f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
+                            f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details.get('error')}"
                         )
 
                 # send SMS if the msg failed in telegram
@@ -238,7 +239,7 @@ def document_from_telegram(message, bot):
                         else:
                             sms_failed_users += f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']})\n"
                             print(
-                                f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details['error']}"
+                                f"{user.values()[0]['name'].title()} ({user.values()[0]['milma_id']}) - {delivery_details.get('error')}"
                             )
 
             # add the message and all recived users msg id and chat id
