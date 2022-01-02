@@ -1,3 +1,4 @@
+import datetime
 from time import sleep
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from bot_modules import warning_msgs
@@ -132,6 +133,46 @@ def cancel_keyboard(bot, message, message_to_send="Huh?"):
     cancel_button = KeyboardButton(text="✖ Cancel ✖")
     keyboard.add(cancel_button)
     # send your phone number msg
+    bot.send_message(
+        message.chat.id,
+        message_to_send,
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+
+
+def date_keyboard(bot, message):
+
+    # get today's date and if it is UTC, add 5.30 hrs to it
+    current_date = datetime.datetime.now()
+
+    if str(current_date.astimezone().tzinfo) == "UTC":
+        current_date = (
+            datetime.date.today() + datetime.timedelta(hours=5, minutes=30)
+        ).strftime("%d-%m-%Y")
+
+    elif str(current_date.astimezone().tzinfo) == "India Standard Time":
+        current_date = datetime.date.today().strftime("%d-%m-%Y")
+
+    else:
+        current_date = datetime.date.today().strftime("%d-%m-%Y")
+
+    # add keyboard button
+    keyboard = ReplyKeyboardMarkup(one_time_keyboard=True)
+    # this is the button to send contact
+    date_am_button = KeyboardButton(text=f"\n{current_date} AM\n")
+    date_pm_button = KeyboardButton(text=f"\n{current_date} PM\n")
+    cancel_button = KeyboardButton(text="❌ Cancel ❌")
+
+    keyboard.add(date_am_button)
+    keyboard.add(date_pm_button)
+    keyboard.add(cancel_button)
+
+    message_to_send = (
+        f"Send date like\n\n{datetime.date.today().strftime('%d-%m-%Y')} AM"
+    )
+
+    # Ask for date
     bot.send_message(
         message.chat.id,
         message_to_send,

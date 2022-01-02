@@ -1,4 +1,4 @@
-import re
+import re, csv
 
 date = ""
 time = ""
@@ -53,3 +53,12 @@ def get_txt_file_data(textfile_name):
         return {"datas": datas, "date": date, "time": time}
     else:
         return 0
+
+
+def get_csv_file_data(textfile_name):
+    with open(textfile_name, "r") as csv_file:
+        csv_data = [element for element in list(csv.reader(csv_file))]
+    if len(csv_data) > 0:
+        if set(["Pro Id", "Mem No", "Pro Name"]).issubset(csv_data[0]):
+            return {"datas": csv_data}
+    return 0

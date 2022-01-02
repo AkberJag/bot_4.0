@@ -40,7 +40,6 @@ from bot_modules.config import (
     MILMA_SEC,
     bot_version,
     msg_auth_key,
-    USE_WEBHOOK,
 )
 
 # start bot instance
@@ -48,28 +47,6 @@ bot = telebot.TeleBot(TOKEN)
 
 # delete any active webhook
 bot.delete_webhook()
-
-# if the app is under testing, use polling else use webhook
-if USE_WEBHOOK:
-    app = flask.Flask(__name__)
-
-    # flask stuff
-    # Empty webserver index, return nothing, just http 200
-    @app.route("/", methods=["GET", "HEAD"])
-    def index():
-        return "nothing here, come back tomorrow"
-
-    # Process webhook calls
-    @app.route(config.WEBHOOK_URL_PATH, methods=["POST"])
-    def webhook():
-        if flask.request.headers.get("content-type") == "application/json":
-            json_string = flask.request.get_data().decode("utf-8")
-            update = telebot.types.Update.de_json(json_string)
-            bot.process_new_updates([update])
-            return ""
-        else:
-            flask.abort(403)
-
 
 # to keep track of the current users using the bot.
 current_users = dict()
@@ -451,26 +428,7 @@ def main():
     # send bot start warning to admin
     bot.send_message(ADMIN, bot_start, reply_markup=ReplyKeyboardRemove())
 
-    if USE_WEBHOOK:
-        bot.remove_webhook()
-        sleep(0.5)
-
-        # Set webhook
-        bot.set_webhook(
-            url=config.WEBHOOK_URL_BASE + config.WEBHOOK_URL_PATH,
-            certificate=open(config.WEBHOOK_SSL_CERT, "r"),
-        )
-
-        # Start flask server
-        app.run(
-            host=config.WEBHOOK_LISTEN,
-            port=config.WEBHOOK_PORT,
-            ssl_context=(config.WEBHOOK_SSL_CERT, config.WEBHOOK_SSL_PRIV),
-            debug=True,
-        )
-
-    else:
-        bot.polling(none_stop=True)
+    bot.polling(none_stop=True)
 
 
 if __name__ == "__main__":

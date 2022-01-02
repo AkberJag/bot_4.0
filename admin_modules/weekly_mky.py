@@ -64,16 +64,20 @@ def process_weeklyXL_mky(file_path):
 
         # get data of each user from the excel file
         for row in wb_sheet.iter_rows(mky_weekly_heading_start + 1):
-            row_values = [cell.value for cell in row][: len(XL_HEADING)]
-            if None not in row_values:
-                weekly_bill_details.append(
-                    {
-                        "bank_acc": row_values[0],
-                        "member_name": str(row_values[1]).capitalize(),
-                        "milma_member_id": row_values[2],
-                        "weekly_amount": row_values[3],
-                    }
-                )
+            row_values = [cell.value if cell.value else 0 for cell in row][
+                : len(XL_HEADING)
+            ]
+            print("huhuhu", row_values)
+            if len(row_values) > 0:
+                if None not in row_values and row_values[0] != 0:
+                    weekly_bill_details.append(
+                        {
+                            "bank_acc": row_values[0],
+                            "member_name": str(row_values[1]).capitalize(),
+                            "milma_member_id": row_values[2],
+                            "weekly_amount": row_values[3],
+                        }
+                    )
         return {
             "result": "Success",
             "data": weekly_bill_details,
@@ -112,12 +116,14 @@ def send_mky_weekly(bot, weekly_data):
             print(user)
             if str(user[0]["milma_id"]) == str(data["milma_member_id"]):
                 # send weekly message to users
-                # introduce a small delay
+
                 delivery_details = send_to_usrs_img(
                     bot,
                     f"{weekly_msg_pad}\n{str(weekly_data['date']).replace('to', 'മുതൽ')} വരെ\n\n{data['member_name']}, {data['milma_member_id']}\nഅക്കൗണ്ട് നമ്പർ: XXXX{data['bank_acc'][-4:]}<b>\n\n₹{data['weekly_amount']} രൂപ ബാങ്ക് അക്കൗണ്ടിൽ നിക്ഷേപിച്ചിരിക്കുന്നു </b>",
                     user[0]["telegram_id"],
                 )
+
+                delivery_details = None
 
                 if delivery_details is not None:
                     delivery_success += 1
