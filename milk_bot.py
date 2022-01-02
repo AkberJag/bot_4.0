@@ -1,7 +1,7 @@
 ##########################
 # Django specific settings
 ##########################
-import os, flask
+import os 
 from user_modules.old_bills_handler import get_old_bills
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
