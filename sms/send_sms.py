@@ -10,7 +10,7 @@ def daily_sms(data, name, phone, date):
 
     payload = '"flow_id": "{dfi}",  "mobiles": "91{mobile}",  "date": "{bill_date}",  "user": "{user}",  "qty": "{qty}",  "clr": "{clr}",  "fat": "{fat}",  "snf": "{snf}",  "rs": "{rs}",  "tot": "{tot}",  "test": ""'.format(
         mobile=phone,
-        user=name[:15].title(),
+        user=name[:12].title(),
         dfi=daily_flow_id,
         bill_date=date,
         qty=data[2],
