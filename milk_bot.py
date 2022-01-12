@@ -463,7 +463,3 @@ if __name__ == "__main__":
 
         current_users = dict()
         sleep(6)
-
-
-
-
