@@ -478,7 +478,7 @@ def document_from_telegram(message, bot):
 
         send_warnings_to_admin(
             bot,
-            f"✅ <b>EXCEL file updated successfully</b> ✅\n\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}",
+            f"✅ <b>Users informations updated successfully</b> ✅\n\nRegistered users: {User.objects.filter(~Q(telegram_id=0)).count()}\nNon registered users: {User.objects.filter(telegram_id=0).count()}",
         )
 
     # if the file is any other xl file
