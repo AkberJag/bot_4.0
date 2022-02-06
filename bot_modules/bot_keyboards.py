@@ -146,16 +146,14 @@ def date_keyboard(bot, message):
     # get today's date and if it is UTC, add 5.30 hrs to it
     current_date = datetime.datetime.now()
 
-    if str(current_date.astimezone().tzinfo) == "UTC":
+    if str(current_date.astimezone().tzinfo) == "India Standard Time":
+        current_date = datetime.date.today().strftime("%d-%m-%Y")
+    
+    elif str(current_date.astimezone().tzinfo) == "UTC":
         current_date = (
             datetime.date.today() + datetime.timedelta(hours=5, minutes=30)
         ).strftime("%d-%m-%Y")
 
-    elif str(current_date.astimezone().tzinfo) == "India Standard Time":
-        current_date = datetime.date.today().strftime("%d-%m-%Y")
-
-    else:
-        current_date = datetime.date.today().strftime("%d-%m-%Y")
 
     # add keyboard button
     keyboard = ReplyKeyboardMarkup(one_time_keyboard=True)
