@@ -414,10 +414,9 @@ def identify_documents_and_act(message):
 
 @bot.message_handler(commands=["me"])
 def send_senders_details(message):
-    if message.chat.id in ADMINS:
-        import pprint
+    import pprint
 
-        bot.send_message(
+    bot.send_message(
             message.chat.id,
             f"{message.from_user.first_name}\n{message.chat.id}",
         )
