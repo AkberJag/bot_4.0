@@ -13,4 +13,4 @@ MilkyBot is your open-source, free-to-use Telegram Bot designed to make sharing 
 - Broadcast Messages to Your Valued Users for Effective Communication 🔊
 
 > **Note**
-> While the code is open for anyone to use, if you require assistance with hosting it on the cloud, feel free to reach out to me.
+> While the code is open for anyone to use, if you require assistance with hosting it on the cloud, feel free to [reach out to me](https://t.me/akberjag).
